@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-firestore.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="root"></div>
+
+    <script type="text/babel">
+        // Global variables provided by the environment
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const __initial_auth_token = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // Initialize Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        const { useState, useEffect } = React;
+
+        const App = () => {
+            const [user, setUser] = useState(null);
+            const [isAdmin, setIsAdmin] = useState(false);
+            const [activeTab, setActiveTab] = useState('dashboard');
+            const [loading, setLoading] = useState(true);
+
+            useEffect(() => {
+                const unsubscribe = auth.onAuthStateChanged(async (user) => {
+                    if (user) {
+                        const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('users').doc(user.uid);
+                        try {
+                            const docSnap = await docRef.get();
+                            if (docSnap.exists && docSnap.data().role === 'admin') {
+                                setUser(user);
+                                setIsAdmin(true);
+                            } else {
+                                setUser(null);
+                                setIsAdmin(false);
+                            }
+                        } catch (error) {
+                            console.error("Error fetching user data:", error);
+                            setUser(null);
+                            setIsAdmin(false);
+                        }
+                    } else {
+                        setUser(null);
+                        setIsAdmin(false);
+                    }
+                    setLoading(false);
+                });
+                return () => unsubscribe();
+            }, []);
+
+            const handleLogout = () => {
+                auth.signOut();
+            };
+
+            const Card = ({ title, count, color, description }) => (
+                <div className={`bg-white p-6 rounded-2xl shadow-lg border-l-4 ${color}`}>
+                    <h3 className="text-xl font-bold text-gray-800">{title}</h3>
+                    <p className="text-4xl font-extrabold mt-2">{count}</p>
+                    <p className="text-sm text-gray-500 mt-2">{description}</p>
+                </div>
+            );
+
+            if (loading) {
+                return (
+                    <div className="flex items-center justify-center min-h-screen">
+                        <div className="text-xl font-semibold text-gray-700">Loading...</div>
+                    </div>
+                );
+            }
+
+            if (!user || !isAdmin) {
+                return (
+                    <div className="flex items-center justify-center min-h-screen bg-gray-100 p-4">
+                        <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md text-center">
+                            <h2 className="text-2xl font-bold text-gray-800 mb-4">Access Denied</h2>
+                            <p className="text-gray-600 mb-6">
+                                You do not have permission to view this page. Please log in as an administrator.
+                            </p>
+                            <a 
+                                href="login_page.html"
+                                className="bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700 transition duration-300 inline-block"
+                            >
+                                Go to Login Page
+                            </a>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="min-h-screen bg-gray-100 p-8">
+                    <div className="flex justify-between items-center mb-8">
+                        <h1 className="text-4xl font-bold text-gray-800">Admin Dashboard</h1>
+                        <button
+                            onClick={handleLogout}
+                            className="bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700 transition duration-300"
+                        >
+                            Logout
+                        </button>
+                    </div>
+
+                    <div className="bg-white rounded-xl shadow-lg mb-6">
+                        <div className="flex border-b border-gray-200">
+                            <button
+                                onClick={() => setActiveTab('dashboard')}
+                                className={`px-6 py-3 font-semibold text-lg transition duration-300 ${activeTab === 'dashboard' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+                            >
+                                Dashboard
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('map')}
+                                className={`px-6 py-3 font-semibold text-lg transition duration-300 ${activeTab === 'map' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+                            >
+                                Map
+                            </button>
+                        </div>
+
+                        <div className="p-6">
+                            {activeTab === 'dashboard' ? (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    <Card
+                                        title="Emergencies"
+                                        count="12"
+                                        color="border-blue-500"
+                                        description="Number of active emergency alerts."
+                                    />
+                                    <Card
+                                        title="E-FIRs"
+                                        count="8"
+                                        color="border-red-500"
+                                        description="Electronic First Information Reports filed."
+                                    />
+                                    <Card
+                                        title="Pending Cases"
+                                        count="5"
+                                        color="border-yellow-500"
+                                        description="Cases awaiting administrative action."
+                                    />
+                                </div>
+                            ) : (
+                                <div className="text-center p-12 bg-gray-50 rounded-lg">
+                                    <h2 className="text-2xl font-semibold text-gray-700 mb-4">
+                                        Emergency Locations
+                                    </h2>
+                                    <div className="bg-gray-200 w-full h-96 rounded-lg shadow-inner flex items-center justify-center text-gray-500 text-lg">
+                                        
+
+[Image of a map with location pins]
+
+                                    </div>
+                                    <p className="mt-4 text-gray-500 max-w-2xl mx-auto">
+                                        This is a placeholder for a real-time map. The map would display the exact locations of all ongoing emergencies and pending cases, allowing for quick response planning.
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const container = document.getElementById('root');
+        const root = ReactDOM.createRoot(container);
+        root.render(<App />);
+    </script>
+</body>
+</html>
