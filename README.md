@@ -111,8 +111,4 @@ The Tourist Safety System operates across three main components:
 11. **Encrypted database** (field-level + disk encryption for sensitive data)
 12. **Shake-to-SOS** (on-device detection → backend event pipeline)
 
----
 
-This document is structured for **direct use in your repo** (e.g., as `TECHNICAL_APPROACH.md`).
-
-👉 Do you also want me to create a **repo tree structure** (folders & files for `mobile/`, `web/`, `backend/`) so it aligns with this technical approach?
