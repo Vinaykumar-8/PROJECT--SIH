@@ -61,6 +61,7 @@ The Tourist Safety System operates across three main components:
 * Shake-to-SOS with configurable sensitivity and cancel window
 * Local queue (SQLite / Realm) for offline buffering (locations, SOS, event batches)
 * Battery-aware location sampling (adaptive frequency based on battery/accuracy)
+* No Internet communication.
 
 ---
 
